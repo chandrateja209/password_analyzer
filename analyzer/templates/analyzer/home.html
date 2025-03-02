@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.5">
+    <title>Password Analyzer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+            padding: 100px;
+            transition: background 0.3s, color 0.3s;
+            position: relative;
+        }
+        .watermark {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        opacity: 0.5;
+        font-size: 12px;
+    }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            display: inline-block;
+            transition: background 0.3s;
+            text-align: center;
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        input, button {
+            padding: 10px;
+            margin: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        button {
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+            border: none;
+        }
+        .strong { color: green; font-weight: bold; }
+        .moderate { color: orange; font-weight: bold; }
+        .weak { color: red; font-weight: bold; }
+        .leaked { color: red; font-weight: bold; }
+        .dark-mode {
+            background-color: #333;
+            color: white;
+        }
+        .dark-mode .container {
+            background: #444;
+        }
+        .dark-mode-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            cursor: pointer;
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body onload="applyDarkMode()">
+    <div class="dark-mode-toggle" onclick="toggleDarkMode()">🌙</div>
+    <div class="container">
+        <h2>Password Analyzer 🔒</h2>
+        <form method="post">
+            {% csrf_token %}
+            <div class="input-group">
+                <input type="text" name="password" id="password" placeholder="Enter password"  oninput="liveStrengthCheck()">
+                <div>
+                    <button type="submit">Check Strength</button>
+                    <button type="submit" name="generate">Generate Strong Password</button>
+                </div>
+            </div>
+        </form>
+        {% if password %}
+        <p><strong>Generated Password:</strong> {{ password }}
+            <button class="copy-btn" onclick="copyToClipboard('{{ password }}')">Copy</button>
+        </p>
+        
+        {% endif %}
+        {% if result %}
+            <p class="{{ strength_class }}"><strong>Strength:</strong> {{ result }}</p>
+            <p><strong>Time to Crack:</strong> {{ crack_time }}</p>
+            <p><strong>Leaked Password Check:</strong>
+                {% if leaked_count > 0 %}
+                    <span class="leaked" style = "color: #FFBF00; font-weight: bold;">⚠ Password found in data breaches {{ leaked_count }} times!</span>
+                {% else %}
+                    <span style="color: green;">✔ Password not found in leaks</span>
+                {% endif %}
+            </p>
+        {% endif %}
+    </div>
+    <script>
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            let icon = document.querySelector('.dark-mode-toggle');
+            if (document.body.classList.contains('dark-mode')) {
+                icon.innerHTML = '☀️';
+            } else {
+                icon.innerHTML = '🌙';
+            }
+            localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+        }
+
+        function applyDarkMode() {
+            if (localStorage.getItem('darkMode') === 'true') {
+                document.body.classList.add('dark-mode');
+                document.querySelector('.dark-mode-toggle').innerHTML = '☀️';
+            }
+        }
+
+        function liveStrengthCheck() {
+            let password = document.getElementById("password").value;
+            let strength = "Weak";
+            let color = "red";
+            
+            if (password.length > 10 && /[A-Z]/.test(password) && /[0-9]/.test(password) && /[!@#$%^&*]/.test(password)) {
+                strength = "Strong";
+                color = "green";
+            } else if (password.length > 6) {
+                strength = "Moderate";
+                color = "orange";
+            }
+
+            let strengthIndicator = document.getElementById("strength-indicator");
+            if (!strengthIndicator) {
+                strengthIndicator = document.createElement("p");
+                strengthIndicator.id = "strength-indicator";
+                document.querySelector(".container").appendChild(strengthIndicator);
+            }
+            strengthIndicator.innerHTML = `<strong>Password Strength:</strong> <span style="color:${color};">${strength}</span>`;
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text);
+            alert("Copied: " + text);
+        }
+    </script>
+        <div class="watermark">By Chandra Teja </div>
+
+</body>
+</html>
